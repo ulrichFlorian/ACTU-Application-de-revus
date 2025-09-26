@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}Tableau de bord - Ma To-Do List{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-gray-800">Mes Tâches</h1>
+        <button onclick="document.getElementById('addTaskModal').classList.remove('hidden')" 
+                class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg flex items-center">
+            <i class="fas fa-plus mr-2"></i> Nouvelle Tâche
+        </button>
+    </div>
+
+    <!-- Filtres -->
+    <div class="mb-6 flex space-x-4">
+        <a href="{{ url_for('dashboard') }}" 
+           class="px-4 py-2 rounded-md {% if request.args.get('filter') != 'completed' and request.args.get('filter') != 'pending' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+            Toutes
+        </a>
+        <a href="{{ url_for('dashboard', filter='pending') }}" 
+           class="px-4 py-2 rounded-md {% if request.args.get('filter') == 'pending' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+            En cours
+        </a>
+        <a href="{{ url_for('dashboard', filter='completed') }}" 
+           class="px-4 py-2 rounded-md {% if request.args.get('filter') == 'completed' %}bg-blue-100 text-blue-700{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+            Terminées
+        </a>
+    </div>
+
+    <!-- Liste des tâches -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        {% if todos %}
+            <ul class="divide-y divide-gray-200">
+                {% for todo in todos %}
+                    <li class="p-4 hover:bg-gray-50 {% if todo.completed %}bg-gray-50{% endif %}">
+                        <div class="flex items-start">
+                            <div class="flex items-center h-5">
+                                <input type="checkbox" 
+                                       onchange="window.location.href='{{ url_for('complete_todo', todo_id=todo.id) }}'"
+                                       {% if todo.completed %}checked{% endif %}
+                                       class="h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500">
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <div class="flex items-center justify-between">
+                                    <h3 class="text-lg font-medium {% if todo.completed %}text-gray-400{% else %}text-gray-900{% endif %}">
+                                        {{ todo.title }}
+                                    </h3>
+                                    <div class="flex space-x-2">
+                                        <span class="text-sm {% if todo.completed %}text-green-600{% else %}text-yellow-600{% endif %} font-medium">
+                                            {% if todo.completed %}Terminé{% else %}En cours{% endif %}
+                                        </span>
+                                        <a href="{{ url_for('delete_todo', todo_id=todo.id) }}" 
+                                           onclick="return confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')"
+                                           class="text-red-600 hover:text-red-800">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                {% if todo.description %}
+                                    <p class="mt-1 text-sm text-gray-600">{{ todo.description }}</p>
+                                {% endif %}
+                                {% if todo.due_date %}
+                                    <div class="mt-2 flex items-center text-sm text-gray-500">
+                                        <i class="far fa-calendar-alt mr-1"></i>
+                                        <span>Échéance: {{ todo.due_date.strftime('%d/%m/%Y') }}</span>
+                                    </div>
+                                {% endif %}
+                                <div class="mt-2 text-xs text-gray-400">
+                                    Créé le {{ todo.created_at.strftime('%d/%m/%Y') }}
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <div class="p-8 text-center text-gray-500">
+                <i class="fas fa-clipboard-list text-4xl mb-2 text-gray-300"></i>
+                <p>Aucune tâche pour le moment. Ajoutez votre première tâche !</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal Ajout de tâche -->
+<div id="addTaskModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div class="bg-white rounded-lg w-full max-w-md">
+        <div class="p-6">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-semibold text-gray-800">Nouvelle Tâche</h3>
+                <button onclick="document.getElementById('addTaskModal').classList.add('hidden')" 
+                        class="text-gray-400 hover:text-gray-500">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <form method="POST" action="{{ url_for('add_todo') }}" class="space-y-4">
+                <div>
+                    <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Titre *</label>
+                    <input type="text" id="title" name="title" required
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea id="description" name="description" rows="3"
+                              class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                
+                <div>
+                    <label for="due_date" class="block text-sm font-medium text-gray-700 mb-1">Date d'échéance</label>
+                    <input type="date" id="due_date" name="due_date"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" 
+                            onclick="document.getElementById('addTaskModal').classList.add('hidden')"
+                            class="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+                        Annuler
+                    </button>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                        Ajouter la tâche
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Fermer la modal en cliquant en dehors
+    document.getElementById('addTaskModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.add('hidden');
+        }
+    });
+</script>
+{% endblock %}
