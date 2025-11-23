@@ -1,0 +1,101 @@
+version: '3.8'
+
+services:
+  # API Gateway
+  api-gateway:
+    build: ./api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - AUTH_SERVICE_URL=http://user-authentication:3004
+      - PREFERENCES_SERVICE_URL=http://user-preferences:3001
+      - FEED_SERVICE_URL=http://content-feed:3002
+      - RECOMMENDATION_SERVICE_URL=http://content-recommendation:3003
+      - CATEGORIES_SERVICE_URL=http://content-categories:3005
+    depends_on:
+      - user-authentication
+      - user-preferences
+      - content-feed
+      - content-recommendation
+      - content-categories
+
+  # User Preferences Service
+  user-preferences:
+    build: ./user-preferences
+    ports:
+      - "3001:3001"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=mongodb://admin:password@host.docker.internal:27018/user-preferences?authSource=admin
+
+  # Content Feed Service
+  content-feed:
+    build: ./content-feed
+    ports:
+      - "3002:3002"
+    depends_on:
+      - redis
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - PREFERENCES_SERVICE_URL=http://user-preferences:3001
+      - CATEGORIES_SERVICE_URL=http://content-categories:3005
+      - RECOMMENDATION_SERVICE_URL=http://content-recommendation:3003
+      - GNEWS_API_KEY=46e7bad378365fc3f21ef1432bfe1a61
+      - AFRICA_NEWS_API_KEY=ae0ec8709fc34dd0b5efeb425aef953e
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_URL=redis://redis:6379
+
+  # Content Recommendation Service
+  content-recommendation:
+    build: ./content-recommendation
+    ports:
+      - "3003:3003"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - PREFERENCES_SERVICE_URL=http://user-preferences:3001
+      - DATABASE_URL=mongodb://admin:password@host.docker.internal:27018/recommendations?authSource=admin
+
+  # User Authentication Service
+  user-authentication:
+    build: ./user-authentication
+    ports:
+      - "3004:3004"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - NODE_ENV=development
+      - PORT=3004
+      - JWT_SECRET=your-secret-key
+      - DATABASE_URL=mongodb://admin:password@host.docker.internal:27018/auth?authSource=admin
+
+  # Content Categories Service
+  content-categories:
+    build: ./content-categories
+    ports:
+      - "3005:3005"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - NODE_ENV=development
+      - PORT=3005
+      - DATABASE_URL=mongodb://admin:password@host.docker.internal:27018/categories?authSource=admin
+
+  # Redis for Caching
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:

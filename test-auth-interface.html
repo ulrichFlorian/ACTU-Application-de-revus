@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Authentication</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="email"], input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button.secondary {
+            background-color: #6c757d;
+        }
+        button.secondary:hover {
+            background-color: #545b62;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #e9ecef;
+            border: 1px solid #dee2e6;
+            cursor: pointer;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab.active {
+            background-color: white;
+            border-bottom: 1px solid white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Test API Authentication</h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('register')">Inscription</div>
+            <div class="tab" onclick="showTab('login')">Connexion</div>
+            <div class="tab" onclick="showTab('verify')">Vérification</div>
+            <div class="tab" onclick="showTab('users')">Utilisateurs</div>
+        </div>
+
+        <!-- Tab Inscription -->
+        <div id="register" class="tab-content active">
+            <h3>📝 Inscription d'un nouvel utilisateur</h3>
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="regEmail">Email:</label>
+                    <input type="email" id="regEmail" value="test@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">Mot de passe:</label>
+                    <input type="password" id="regPassword" value="password123" required>
+                </div>
+                <div class="form-group">
+                    <label for="regFirstName">Prénom:</label>
+                    <input type="text" id="regFirstName" value="John" required>
+                </div>
+                <div class="form-group">
+                    <label for="regLastName">Nom:</label>
+                    <input type="text" id="regLastName" value="Doe" required>
+                </div>
+                <button type="submit">S'inscrire</button>
+            </form>
+        </div>
+
+        <!-- Tab Connexion -->
+        <div id="login" class="tab-content">
+            <h3>🔑 Connexion utilisateur</h3>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="loginEmail">Email:</label>
+                    <input type="email" id="loginEmail" value="test@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Mot de passe:</label>
+                    <input type="password" id="loginPassword" value="password123" required>
+                </div>
+                <button type="submit">Se connecter</button>
+            </form>
+        </div>
+
+        <!-- Tab Vérification -->
+        <div id="verify" class="tab-content">
+            <h3>✅ Vérification du token</h3>
+            <div class="form-group">
+                <label for="verifyToken">Token JWT:</label>
+                <input type="text" id="verifyToken" placeholder="Collez votre token ici">
+            </div>
+            <button onclick="verifyToken()">Vérifier le token</button>
+            <button class="secondary" onclick="getUserProfile()">Profil utilisateur</button>
+        </div>
+
+        <!-- Tab Utilisateurs -->
+        <div id="users" class="tab-content">
+            <h3>👥 Liste des utilisateurs</h3>
+            <button onclick="getAllUsers()">Récupérer tous les utilisateurs</button>
+            <button class="secondary" onclick="checkHealth()">Vérifier la santé du service</button>
+        </div>
+
+        <div id="response" class="response" style="display: none;"></div>
+    </div>
+
+    <script>
+        let currentToken = '';
+
+        function showTab(tabName) {
+            // Masquer tous les onglets
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Afficher l'onglet sélectionné
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function showResponse(data, isSuccess = true) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.style.display = 'block';
+            responseDiv.className = `response ${isSuccess ? 'success' : 'error'}`;
+            responseDiv.textContent = JSON.stringify(data, null, 2);
+        }
+
+        function showInfo(data) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.style.display = 'block';
+            responseDiv.className = 'response info';
+            responseDiv.textContent = JSON.stringify(data, null, 2);
+        }
+
+        // Gestionnaire d'inscription
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const userData = {
+                email: document.getElementById('regEmail').value,
+                password: document.getElementById('regPassword').value,
+                firstName: document.getElementById('regFirstName').value,
+                lastName: document.getElementById('regLastName').value
+            };
+
+            try {
+                const response = await fetch('http://localhost:3004/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentToken = data.token;
+                    document.getElementById('verifyToken').value = data.token;
+                    showResponse(data, true);
+                } else {
+                    showResponse(data, false);
+                }
+            } catch (error) {
+                showResponse({ error: error.message }, false);
+            }
+        });
+
+        // Gestionnaire de connexion
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const loginData = {
+                email: document.getElementById('loginEmail').value,
+                password: document.getElementById('loginPassword').value
+            };
+
+            try {
+                const response = await fetch('http://localhost:3004/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(loginData)
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    currentToken = data.token;
+                    document.getElementById('verifyToken').value = data.token;
+                    showResponse(data, true);
+                } else {
+                    showResponse(data, false);
+                }
+            } catch (error) {
+                showResponse({ error: error.message }, false);
+            }
+        });
+
+        // Vérification du token
+        async function verifyToken() {
+            const token = document.getElementById('verifyToken').value || currentToken;
+            
+            if (!token) {
+                showResponse({ error: 'Aucun token fourni' }, false);
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3004/api/auth/verify', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                showResponse(data, response.ok);
+            } catch (error) {
+                showResponse({ error: error.message }, false);
+            }
+        }
+
+        // Profil utilisateur
+        async function getUserProfile() {
+            const token = document.getElementById('verifyToken').value || currentToken;
+            
+            if (!token) {
+                showResponse({ error: 'Aucun token fourni' }, false);
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3004/api/users/profile', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                showResponse(data, response.ok);
+            } catch (error) {
+                showResponse({ error: error.message }, false);
+            }
+        }
+
+        // Tous les utilisateurs
+        async function getAllUsers() {
+            const token = document.getElementById('verifyToken').value || currentToken;
+            
+            if (!token) {
+                showResponse({ error: 'Aucun token fourni' }, false);
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3004/api/users', {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                showResponse(data, response.ok);
+            } catch (error) {
+                showResponse({ error: error.message }, false);
+            }
+        }
+
+        // Santé du service
+        async function checkHealth() {
+            try {
+                const response = await fetch('http://localhost:3004/health');
+                const data = await response.json();
+                showInfo(data);
+            } catch (error) {
+                showResponse({ error: error.message }, false);
+            }
+        }
+
+        // Vérifier la santé au chargement
+        window.onload = function() {
+            checkHealth();
+        };
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API User Preferences</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="email"], input[type="number"], select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        button.secondary {
+            background-color: #6c757d;
+        }
+        button.secondary:hover {
+            background-color: #545b62;
+        }
+        .response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        .tabs {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            background-color: #e9ecef;
+            border: 1px solid #dee2e6;
+            cursor: pointer;
+            margin-right: 5px;
+            border-radius: 5px 5px 0 0;
+        }
+        .tab.active {
+            background-color: white;
+            border-bottom: 1px solid white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚙️ Test API User Preferences</h1>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('preferences')">Préférences</div>
+            <div class="tab" onclick="showTab('profile')">Profil</div>
+            <div class="tab" onclick="showTab('categories')">Catégories</div>
+            <div class="tab" onclick="showTab('health')">Santé</div>
+        </div>
+
+        <!-- Tab Préférences -->
+        <div id="preferences" class="tab-content active">
+            <div class="section">
+                <h3>📝 Gestion des Préférences Utilisateur</h3>
+                
+                <div class="form-group">
+                    <label for="userId">ID Utilisateur:</label>
+                    <input type="text" id="userId" value="user123" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Catégories Préférées:</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="cat_politique" value="politique">
+                            <label for="cat_politique">Politique</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="cat_sport" value="sport">
+                            <label for="cat_sport">Sport</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="cat_technologie" value="technologie" checked>
+                            <label for="cat_technologie">Technologie</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="cat_sante" value="santé">
+                            <label for="cat_sante">Santé</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="cat_economie" value="économie">
+                            <label for="cat_economie">Économie</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="cat_culture" value="culture">
+                            <label for="cat_culture">Culture</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Sources Préférées:</label>
+                    <input type="text" id="preferredSources" value="Le Monde, BBC, TechCrunch" placeholder="Séparées par des virgules">
+                </div>
+
+                <div class="form-group">
+                    <label>Langues:</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="lang_fr" value="fr" checked>
+                            <label for="lang_fr">Français</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="lang_en" value="en">
+                            <label for="lang_en">Anglais</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="lang_es" value="es">
+                            <label for="lang_es">Espagnol</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="articleLength">Longueur d'article préférée:</label>
+                    <select id="articleLength">
+                        <option value="court">Court</option>
+                        <option value="moyen" selected>Moyen</option>
+                        <option value="long">Long</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="readingTime">Moment de lecture préféré:</label>
+                    <select id="readingTime">
+                        <option value="matin" selected>Matin</option>
+                        <option value="midi">Midi</option>
+                        <option value="soir">Soir</option>
+                        <option value="nuit">Nuit</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="maxArticles">Nombre max d'articles par jour:</label>
+                    <input type="number" id="maxArticles" value="20" min="1" max="100">
+                </div>
+
+                <button onclick="getPreferences()">Récupérer Préférences</button>
+                <button onclick="updatePreferences()">Mettre à Jour</button>
+                <button onclick="addPreferredCategory()">Ajouter Catégorie</button>
+                <button onclick="blockCategory()">Bloquer Catégorie</button>
+            </div>
+        </div>
+
+        <!-- Tab Profil -->
+        <div id="profile" class="tab-content">
+            <div class="section">
+                <h3>👤 Gestion du Profil Utilisateur</h3>
+                
+                <div class="form-group">
+                    <label for="profileUserId">ID Utilisateur:</label>
+                    <input type="text" id="profileUserId" value="user123" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="age">Âge:</label>
+                    <select id="age">
+                        <option value="18-24">18-24 ans</option>
+                        <option value="25-34" selected>25-34 ans</option>
+                        <option value="35-44">35-44 ans</option>
+                        <option value="45-54">45-54 ans</option>
+                        <option value="55-64">55-64 ans</option>
+                        <option value="65+">65+ ans</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="gender">Genre:</label>
+                    <select id="gender">
+                        <option value="homme">Homme</option>
+                        <option value="femme">Femme</option>
+                        <option value="autre">Autre</option>
+                        <option value="non-précisé" selected>Non-précisé</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="country">Pays:</label>
+                    <input type="text" id="country" value="France">
+                </div>
+
+                <div class="form-group">
+                    <label for="city">Ville:</label>
+                    <input type="text" id="city" value="Paris">
+                </div>
+
+                <div class="form-group">
+                    <label for="profession">Profession:</label>
+                    <input type="text" id="profession" value="Développeur">
+                </div>
+
+                <button onclick="getProfile()">Récupérer Profil</button>
+                <button onclick="updateProfile()">Mettre à Jour Profil</button>
+            </div>
+        </div>
+
+        <!-- Tab Catégories -->
+        <div id="categories" class="tab-content">
+            <div class="section">
+                <h3>🏷️ Gestion des Catégories</h3>
+                
+                <div class="form-group">
+                    <label for="categoryUserId">ID Utilisateur:</label>
+                    <input type="text" id="categoryUserId" value="user123" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="categoryToAdd">Catégorie à ajouter:</label>
+                    <select id="categoryToAdd">
+                        <option value="politique">Politique</option>
+                        <option value="sport">Sport</option>
+                        <option value="technologie">Technologie</option>
+                        <option value="santé">Santé</option>
+                        <option value="économie">Économie</option>
+                        <option value="culture">Culture</option>
+                        <option value="international">International</option>
+                        <option value="sciences">Sciences</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="categoryToBlock">Catégorie à bloquer:</label>
+                    <select id="categoryToBlock">
+                        <option value="politique">Politique</option>
+                        <option value="sport">Sport</option>
+                        <option value="technologie">Technologie</option>
+                        <option value="santé">Santé</option>
+                        <option value="économie">Économie</option>
+                        <option value="culture">Culture</option>
+                        <option value="international">International</option>
+                        <option value="sciences">Sciences</option>
+                    </select>
+                </div>
+
+                <button onclick="addPreferredCategory()">Ajouter aux Préférées</button>
+                <button onclick="blockCategory()">Bloquer Catégorie</button>
+            </div>
+        </div>
+
+        <!-- Tab Santé -->
+        <div id="health" class="tab-content">
+            <div class="section">
+                <h3>🏥 Vérification de Santé du Service</h3>
+                <button onclick="checkHealth()">Vérifier la Santé</button>
+                <button class="secondary" onclick="testAllEndpoints()">Tester Tous les Endpoints</button>
+            </div>
+        </div>
+
+        <div id="response" class="response" style="display: none;"></div>
+    </div>
+
+    <script>
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function showResponse(data, isSuccess = true) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.style.display = 'block';
+            responseDiv.className = `response ${isSuccess ? 'success' : 'error'}`;
+            responseDiv.textContent = JSON.stringify(data, null, 2);
+        }
+
+        function showInfo(data) {
+            const responseDiv = document.getElementById('response');
+            responseDiv.style.display = 'block';
+            responseDiv.className = 'response info';
+            responseDiv.textContent = JSON.stringify(data, null, 2);
+        }
+
+        // Récupérer les préférences
+        async function getPreferences() {
+            const userId = document.getElementById('userId').value;
+            
+            try {
+                const response = await fetch(`http://localhost:3001/api/preferences/${userId}`);
+                const data = await response.json();
+                showResponse(data, response.ok);
+            } catch (error) {
+                showResponse({ error: error.message }, false);
+            }
+        }
+
+        // Mettre à jour les préférences
+        async function updatePreferences() {
+            const userId = document.getElementById('userId').value;
+            
+            const preferences = {
+                categories: {
+                    preferred: getSelectedCategories(),
+                    blocked: []
+                },
+                sources: {
+                    preferred: document.getElementById('preferredSources').value.split(',').map(s => s.trim()),
+                    blocked: []
+                },
+                languages: getSelectedLanguages(),
+                readingPreferences: {
+                    articleLength: document.getElementById('articleLength').value,
+                    readingTime: document.getElementById('readingTime').value,
+                    maxArticlesPerDay: parseInt(document.getElementById('maxArticles').value)
+                }
+            };
+
+            try {
+                const response = await fetch(`http://localhost:3001/api/preferences/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(preferences)
+                });
+                const data = await response.json();
+                showResponse(data, response.ok);
+            } catch (error) {
+                showResponse({ error: error.message }, false);
+            }
+        }
+
+        // Ajouter une catégorie préférée
+        async function addPreferredCategory() {
+            const userId = document.getElementById('userId').value;
+            const category = document.getElementById('categoryToAdd').value;
+            
+            try {
+                const response = await fetch(`http://localhost:3001/api/preferences/${userId}/categories/preferred`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ category })
+                });
+                const data = await response.json();
+                showResponse(data, response.ok);
+            } catch (error) {
+                showResponse({ error: error.message }, false);
+            }
+        }
+
+        // Bloquer une catégorie
+        async function blockCategory() {
+            const userId = document.getElementById('userId').value;
+            const category = document.getElementById('categoryToBlock').value;
+            
+            try {
+                const response = await fetch(`http://localhost:3001/api/preferences/${userId}/categories/blocked`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ category })
+                });
+                const data = await response.json();
+                showResponse(data, response.ok);
+            } catch (error) {
+                showResponse({ error: error.message }, false);
+            }
+        }
+
+        // Récupérer le profil
+        async function getProfile() {
+            const userId = document.getElementById('profileUserId').value;
+            
+            try {
+                const response = await fetch(`http://localhost:3001/api/preferences/${userId}/profile`);
+                const data = await response.json();
+                showResponse(data, response.ok);
+            } catch (error) {
+                showResponse({ error: error.message }, false);
+            }
+        }
+
+        // Mettre à jour le profil
+        async function updateProfile() {
+            const userId = document.getElementById('profileUserId').value;
+            
+            const profile = {
+                demographics: {
+                    age: document.getElementById('age').value,
+                    gender: document.getElementById('gender').value,
+                    location: {
+                        country: document.getElementById('country').value,
+                        city: document.getElementById('city').value
+                    },
+                    profession: document.getElementById('profession').value
+                }
+            };
+
+            try {
+                const response = await fetch(`http://localhost:3001/api/preferences/${userId}/profile`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(profile)
+                });
+                const data = await response.json();
+                showResponse(data, response.ok);
+            } catch (error) {
+                showResponse({ error: error.message }, false);
+            }
+        }
+
+        // Vérifier la santé
+        async function checkHealth() {
+            try {
+                const response = await fetch('http://localhost:3001/health');
+                const data = await response.json();
+                showInfo(data);
+            } catch (error) {
+                showResponse({ error: error.message }, false);
+            }
+        }
+
+        // Tester tous les endpoints
+        async function testAllEndpoints() {
+            const userId = 'test-user-' + Date.now();
+            const results = [];
+
+            try {
+                // Test 1: Récupérer préférences (créera des valeurs par défaut)
+                const prefResponse = await fetch(`http://localhost:3001/api/preferences/${userId}`);
+                results.push({ endpoint: 'GET preferences', status: prefResponse.status, success: prefResponse.ok });
+
+                // Test 2: Récupérer profil (créera des valeurs par défaut)
+                const profileResponse = await fetch(`http://localhost:3001/api/preferences/${userId}/profile`);
+                results.push({ endpoint: 'GET profile', status: profileResponse.status, success: profileResponse.ok });
+
+                // Test 3: Ajouter catégorie
+                const catResponse = await fetch(`http://localhost:3001/api/preferences/${userId}/categories/preferred`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category: 'technologie' })
+                });
+                results.push({ endpoint: 'POST category', status: catResponse.status, success: catResponse.ok });
+
+                showInfo({ message: 'Tests terminés', results });
+            } catch (error) {
+                showResponse({ error: error.message }, false);
+            }
+        }
+
+        // Fonctions utilitaires
+        function getSelectedCategories() {
+            const checkboxes = document.querySelectorAll('input[type="checkbox"]:checked');
+            return Array.from(checkboxes).map(cb => cb.value);
+        }
+
+        function getSelectedLanguages() {
+            const langCheckboxes = document.querySelectorAll('input[id^="lang_"]:checked');
+            return Array.from(langCheckboxes).map(cb => cb.value);
+        }
+
+        // Vérifier la santé au chargement
+        window.onload = function() {
+            checkHealth();
+        };
+    </script>
+</body>
+</html>

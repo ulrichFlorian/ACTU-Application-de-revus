@@ -1,0 +1,97 @@
+services:
+  # User Authentication Service
+  - type: web
+    name: user-authentication
+    env: docker
+    dockerfilePath: ./user-authentication/Dockerfile
+    dockerContext: ./user-authentication
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3004
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+
+  # User Preferences Service
+  - type: web
+    name: user-preferences
+    env: docker
+    dockerfilePath: ./user-preferences/Dockerfile
+    dockerContext: ./user-preferences
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: DATABASE_URL
+        sync: false
+
+  # Content Feed Service
+  - type: web
+    name: content-feed
+    env: docker
+    dockerfilePath: ./content-feed/Dockerfile
+    dockerContext: ./content-feed
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3002
+
+  # Content Recommendation Service
+  - type: web
+    name: content-recommendation
+    env: docker
+    dockerfilePath: ./content-recommendation/Dockerfile
+    dockerContext: ./content-recommendation
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3003
+      - key: DATABASE_URL
+        sync: false
+
+  # Content Categories Service
+  - type: web
+    name: content-categories
+    env: docker
+    dockerfilePath: ./content-categories/Dockerfile
+    dockerContext: ./content-categories
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3005
+      - key: DATABASE_URL
+        sync: false
+
+  # API Gateway
+  - type: web
+    name: api-gateway
+    env: docker
+    dockerfilePath: ./api-gateway/Dockerfile
+    dockerContext: ./api-gateway
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: AUTH_SERVICE_URL
+        fromService:
+          name: user-authentication
+          type: web
+          property: host
+      - key: PREFERENCES_SERVICE_URL
+        fromService:
+          name: user-preferences
+          type: web
+          property: host
+
+
+
+
+
