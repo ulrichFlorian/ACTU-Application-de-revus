@@ -1,10 +1,11 @@
 services:
   # ------------------------------------
-  # 1. User Authentication Service
+  # 1. User Authentication (Web Service - Free)
   # ------------------------------------
   - type: web
     name: user-authentication
     env: docker
+    plan: free
     dockerfilePath: ./microservices/user-authentication/Dockerfile
     dockerContext: ./microservices/user-authentication
     envVars:
@@ -18,11 +19,12 @@ services:
         generateValue: true
 
   # ------------------------------------
-  # 2. User Preferences Service
+  # 2. User Preferences (Web Service - Free)
   # ------------------------------------
   - type: web
     name: user-preferences
     env: docker
+    plan: free
     dockerfilePath: ./microservices/user-preferences/Dockerfile
     dockerContext: ./microservices/user-preferences
     envVars:
@@ -34,11 +36,26 @@ services:
         sync: false
 
   # ------------------------------------
-  # 3. Content Feed Service
+  # 3. Custom Redis (Web Service - Free)
+  # ASTUCE : On le fait passer pour un site web pour l'avoir gratuit
+  # ------------------------------------
+  - type: web
+    name: content-cache
+    env: docker
+    plan: free
+    dockerfilePath: ./microservices/redis/Dockerfile
+    dockerContext: ./microservices/redis
+    envVars:
+      - key: PORT
+        value: 6379
+
+  # ------------------------------------
+  # 4. Content Feed (Web Service - Free)
   # ------------------------------------
   - type: web
     name: content-feed
     env: docker
+    plan: free
     dockerfilePath: ./microservices/content-feed/Dockerfile
     dockerContext: ./microservices/content-feed
     envVars:
@@ -46,23 +63,25 @@ services:
         value: production
       - key: PORT
         value: 3002
-      # Liaison avec Redis
+      # On pointe vers notre nouveau service Redis "hacké"
       - key: REDIS_URL
-        fromService:
-          type: redis
-          name: content-cache
-          property: connectionString
+        value: redis://content-cache:6379
+      - key: REDIS_HOST
+        value: content-cache
+      - key: REDIS_PORT
+        value: 6379
       - key: GNEWS_API_KEY
         sync: false
       - key: AFRICA_NEWS_API_KEY
         sync: false
 
   # ------------------------------------
-  # 4. Content Recommendation Service
+  # 5. Content Recommendation (Web Service - Free)
   # ------------------------------------
   - type: web
     name: content-recommendation
     env: docker
+    plan: free
     dockerfilePath: ./microservices/content-recommendation/Dockerfile
     dockerContext: ./microservices/content-recommendation
     envVars:
@@ -74,11 +93,12 @@ services:
         sync: false
 
   # ------------------------------------
-  # 5. Content Categories Service
+  # 6. Content Categories (Web Service - Free)
   # ------------------------------------
   - type: web
     name: content-categories
     env: docker
+    plan: free
     dockerfilePath: ./microservices/content-categories/Dockerfile
     dockerContext: ./microservices/content-categories
     envVars:
@@ -90,7 +110,7 @@ services:
         sync: false
 
   # ------------------------------------
-  # 6. API Gateway (Le point d'entrée)
+  # 7. API Gateway (Web Service - Free)
   # ------------------------------------
   - type: web
     name: api-gateway
@@ -103,12 +123,6 @@ services:
         value: production
       - key: PORT
         value: 3000
-      
-      # -----------------------------------------------------------
-      # CORRECTION MAJEURE ICI :
-      # On utilise les URLs internes explicites au lieu de fromService
-      # Format: http://<nom-du-service>:<port>
-      # -----------------------------------------------------------
       - key: AUTH_SERVICE_URL
         value: http://user-authentication:3004
       - key: PREFERENCES_SERVICE_URL
@@ -119,11 +133,3 @@ services:
         value: http://content-recommendation:3003
       - key: CATEGORIES_SERVICE_URL
         value: http://content-categories:3005
-
-# ------------------------------------
-# Base de données Redis (Gérée par Render)
-# ------------------------------------
-databases:
-  - name: content-cache
-    plan: free
-    ipAllowList: []
