@@ -1,5 +1,7 @@
 services:
-  # User Authentication Service
+  # ------------------------------------
+  # 1. User Authentication Service
+  # ------------------------------------
   - type: web
     name: user-authentication
     env: docker
@@ -8,14 +10,14 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3004
       - key: DATABASE_URL
-        sync: false
+        sync: false # À définir dans le dashboard Render (MongoDB Atlas)
       - key: JWT_SECRET
         generateValue: true
 
-  # User Preferences Service
+  # ------------------------------------
+  # 2. User Preferences Service
+  # ------------------------------------
   - type: web
     name: user-preferences
     env: docker
@@ -24,12 +26,12 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3001
       - key: DATABASE_URL
         sync: false
 
-  # Content Feed Service
+  # ------------------------------------
+  # 3. Content Feed Service
+  # ------------------------------------
   - type: web
     name: content-feed
     env: docker
@@ -38,10 +40,20 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3002
+      # Liaison avec Redis (défini plus bas)
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: content-cache
+          property: connectionString
+      - key: GNEWS_API_KEY
+        sync: false
+      - key: AFRICA_NEWS_API_KEY
+        sync: false
 
-  # Content Recommendation Service
+  # ------------------------------------
+  # 4. Content Recommendation Service
+  # ------------------------------------
   - type: web
     name: content-recommendation
     env: docker
@@ -50,12 +62,12 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3003
       - key: DATABASE_URL
         sync: false
 
-  # Content Categories Service
+  # ------------------------------------
+  # 5. Content Categories Service
+  # ------------------------------------
   - type: web
     name: content-categories
     env: docker
@@ -64,34 +76,52 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3005
       - key: DATABASE_URL
         sync: false
 
-  # API Gateway
+  # ------------------------------------
+  # 6. API Gateway (Le point d'entrée)
+  # ------------------------------------
   - type: web
     name: api-gateway
     env: docker
+    plan: free 
     dockerfilePath: ./api-gateway/Dockerfile
     dockerContext: ./api-gateway
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 3000
+      # Injection automatique des URLs des autres services
       - key: AUTH_SERVICE_URL
         fromService:
           name: user-authentication
           type: web
-          property: host
+          property: url
       - key: PREFERENCES_SERVICE_URL
         fromService:
           name: user-preferences
           type: web
-          property: host
+          property: url
+      - key: FEED_SERVICE_URL
+        fromService:
+          name: content-feed
+          type: web
+          property: url
+      - key: RECOMMENDATION_SERVICE_URL
+        fromService:
+          name: content-recommendation
+          type: web
+          property: url
+      - key: CATEGORIES_SERVICE_URL
+        fromService:
+          name: content-categories
+          type: web
+          property: url
 
-
-
-
-
+# ------------------------------------
+# Base de données Redis (Gérée par Render)
+# ------------------------------------
+databases:
+  - name: content-cache
+    plan: free # Gratuit pour commencer
+    ipAllowList: [] # Accessible uniquement par vos services internes
