@@ -10,8 +10,10 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 3004
       - key: DATABASE_URL
-        sync: false # À définir dans le dashboard Render (MongoDB Atlas)
+        sync: false
       - key: JWT_SECRET
         generateValue: true
 
@@ -26,6 +28,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 3001
       - key: DATABASE_URL
         sync: false
 
@@ -40,7 +44,9 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # Liaison avec Redis (défini plus bas)
+      - key: PORT
+        value: 3002
+      # Liaison avec Redis
       - key: REDIS_URL
         fromService:
           type: redis
@@ -62,6 +68,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 3003
       - key: DATABASE_URL
         sync: false
 
@@ -76,6 +84,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PORT
+        value: 3005
       - key: DATABASE_URL
         sync: false
 
@@ -91,37 +101,29 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      # Injection automatique des URLs des autres services
+      - key: PORT
+        value: 3000
+      
+      # -----------------------------------------------------------
+      # CORRECTION MAJEURE ICI :
+      # On utilise les URLs internes explicites au lieu de fromService
+      # Format: http://<nom-du-service>:<port>
+      # -----------------------------------------------------------
       - key: AUTH_SERVICE_URL
-        fromService:
-          name: user-authentication
-          type: web
-          property: url
+        value: http://user-authentication:3004
       - key: PREFERENCES_SERVICE_URL
-        fromService:
-          name: user-preferences
-          type: web
-          property: url
+        value: http://user-preferences:3001
       - key: FEED_SERVICE_URL
-        fromService:
-          name: content-feed
-          type: web
-          property: url
+        value: http://content-feed:3002
       - key: RECOMMENDATION_SERVICE_URL
-        fromService:
-          name: content-recommendation
-          type: web
-          property: url
+        value: http://content-recommendation:3003
       - key: CATEGORIES_SERVICE_URL
-        fromService:
-          name: content-categories
-          type: web
-          property: url
+        value: http://content-categories:3005
 
 # ------------------------------------
 # Base de données Redis (Gérée par Render)
 # ------------------------------------
 databases:
   - name: content-cache
-    plan: free # Gratuit pour commencer
-    ipAllowList: [] # Accessible uniquement par vos services internes
+    plan: free
+    ipAllowList: []
