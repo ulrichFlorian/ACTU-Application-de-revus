@@ -75,35 +75,35 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Configuration des services
 const services = {
   auth: {
-    target: process.env.AUTH_SERVICE_URL || 'http://user-authentication:3004',
+    target: process.env.AUTH_SERVICE_URL || 'https://user-authentication-9gl6.onrender.com',
     changeOrigin: true,
     pathRewrite: {
       '^/api/auth': '/api'
     }
   },
   preferences: {
-    target: process.env.PREFERENCES_SERVICE_URL || 'http://user-preferences:3001',
+    target: process.env.PREFERENCES_SERVICE_URL || 'https://user-preferences.onrender.com',
     changeOrigin: true,
     pathRewrite: {
       '^/api/preferences': '/api'
     }
   },
   feed: {
-    target: process.env.FEED_SERVICE_URL || 'http://content-feed:3002',
+    target: process.env.FEED_SERVICE_URL || 'https://content-feed.onrender.com',
     changeOrigin: true,
     pathRewrite: {
       '^/api/feed': '/api/feed'
     }
   },
   recommendations: {
-    target: process.env.RECOMMENDATION_SERVICE_URL || 'http://content-recommendation:3003',
+    target: process.env.RECOMMENDATION_SERVICE_URL || 'https://content-recommendation.onrender.com',
     changeOrigin: true,
     pathRewrite: {
       '^/api/recommendations': '/api'
     }
   },
   categories: {
-    target: process.env.CATEGORIES_SERVICE_URL || 'http://content-categories:3005',
+    target: process.env.CATEGORIES_SERVICE_URL || 'https://content-categories.onrender.com',
     changeOrigin: true,
     pathRewrite: {
       '^/api/categories': '/api'
