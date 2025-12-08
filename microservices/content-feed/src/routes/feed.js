@@ -5,6 +5,10 @@ const cheerio = require('cheerio');
 
 const router = express.Router();
 
+const categoriesServiceUrl = (process.env.CATEGORIES_SERVICE_URL || process.env.CONTENT_CATEGORIES_URL || 'http://content-categories:3005').replace(/\/$/, '');
+const preferencesServiceUrl = (process.env.PREFERENCES_SERVICE_URL || 'http://user-preferences:3001').replace(/\/$/, '');
+const recommendationServiceUrl = (process.env.RECOMMENDATION_SERVICE_URL || 'http://content-recommendation:3003').replace(/\/$/, '');
+
 // Obtenir le flux personnalisé pour un utilisateur
 router.get('/user/:userId', async (req, res) => {
   try {
@@ -79,14 +83,14 @@ router.get('/general', async (req, res) => {
       trending = false 
     } = req.query;
 
-    let endpoint = `http://content-categories:3005/api/content?limit=${limit}&offset=${offset}`;
+    let endpoint = `${categoriesServiceUrl}/api/content?limit=${limit}&offset=${offset}`;
     
     if (category) {
       endpoint += `&category=${category}`;
     }
     
     if (trending === 'true') {
-      endpoint = `http://content-categories:3005/api/content/trending/now?limit=${limit}`;
+      endpoint = `${categoriesServiceUrl}/api/content/trending/now?limit=${limit}`;
     }
 
     const response = await axios.get(endpoint);
@@ -219,7 +223,7 @@ router.get('/category/:categorySlug', async (req, res) => {
     let contents = [];
     try {
       const response = await axios.get(
-        `http://content-categories:3005/api/content?category=${categorySlug}&limit=${limit}&offset=${offset}`
+        `${categoriesServiceUrl}/api/content?category=${categorySlug}&limit=${limit}&offset=${offset}`
       );
       contents = response.data.contents || [];
     } catch (innerErr) {
@@ -276,7 +280,7 @@ router.get('/search', async (req, res) => {
       });
     }
 
-    let endpoint = `http://content-categories:3005/api/content?limit=${limit}&offset=${offset}`;
+    let endpoint = `${categoriesServiceUrl}/api/content?limit=${limit}&offset=${offset}`;
     
     if (category) {
       endpoint += `&category=${category}`;
@@ -358,7 +362,7 @@ async function generatePersonalizedFeed(userId, options) {
 // Fonction pour récupérer les préférences utilisateur
 async function getUserPreferences(userId) {
   try {
-    const response = await axios.get(`http://user-preferences:3001/api/preferences/${userId}`);
+    const response = await axios.get(`${preferencesServiceUrl}/api/preferences/${userId}`);
     return response.data.preferences || {};
   } catch (error) {
     console.error('Erreur récupération préférences:', error);
@@ -370,7 +374,7 @@ async function getUserPreferences(userId) {
 async function getUserRecommendations(userId, algorithm, limit) {
   try {
     const response = await axios.get(
-      `http://content-recommendation:3003/api/recommendations/user/${userId}?algorithm=${algorithm}&limit=${limit}`
+      `${recommendationServiceUrl}/api/recommendations/user/${userId}?algorithm=${algorithm}&limit=${limit}`
     );
     
     const recommendations = response.data.recommendations || [];
@@ -380,7 +384,7 @@ async function getUserRecommendations(userId, algorithm, limit) {
       recommendations.map(async (rec) => {
         try {
           const contentResponse = await axios.get(
-            `http://content-categories:3005/api/content/${rec.contentId}`
+            `${categoriesServiceUrl}/api/content/${rec.contentId}`
           );
           return {
             ...contentResponse.data.content,
@@ -409,7 +413,7 @@ async function getContentByPreferences(preferences, limit) {
     const category = preferredCategories[0];
     
     const response = await axios.get(
-      `http://content-categories:3005/api/content?category=${category}&limit=${limit}`
+      `${categoriesServiceUrl}/api/content?category=${category}&limit=${limit}`
     );
     
     return response.data.contents || [];
@@ -424,7 +428,7 @@ async function getContentByPreferences(preferences, limit) {
 async function getTrendingContent(limit) {
   try {
     const response = await axios.get(
-      `http://content-categories:3005/api/content/trending/now?limit=${limit}`
+      `${categoriesServiceUrl}/api/content/trending/now?limit=${limit}`
     );
     
     return response.data.contents || [];

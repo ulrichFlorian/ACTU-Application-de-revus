@@ -4,18 +4,20 @@
 
 const config = {
   // URL de l'API Gateway (point d'entrée unique)
-  API_GATEWAY_URL: process.env.REACT_APP_API_GATEWAY_URL || 'http://localhost:3000',
+  API_GATEWAY_URL: process.env.REACT_APP_API_GATEWAY_URL || 'https://api-gateway-ydpu.onrender.com',
   
   // URLs des services individuels (si besoin d'appels directs)
   AUTH_SERVICE_URL: process.env.REACT_APP_AUTH_SERVICE_URL || 'http://localhost:3004',
-  PREFERENCES_SERVICE_URL: process.env.REACT_APP_PREFERENCES_SERVICE_URL || 'http://localhost:3001',
-  FEED_SERVICE_URL: process.env.REACT_APP_FEED_SERVICE_URL || 'http://localhost:3002',
-  RECOMMENDATION_SERVICE_URL: process.env.REACT_APP_RECOMMENDATION_SERVICE_URL || 'http://localhost:3003',
-  CATEGORIES_SERVICE_URL: process.env.REACT_APP_CATEGORIES_SERVICE_URL || 'http://localhost:3005',
+  PREFERENCES_SERVICE_URL: process.env.REACT_APP_PREFERENCES_SERVICE_URL || 'https://user-preferences.onrender.com',
+  FEED_SERVICE_URL: process.env.REACT_APP_FEED_SERVICE_URL || 'https://content-feed.onrender.com',
+  RECOMMENDATION_SERVICE_URL: process.env.REACT_APP_RECOMMENDATION_SERVICE_URL || 'https://content-recommendation.onrender.com',
+  CATEGORIES_SERVICE_URL: process.env.REACT_APP_CATEGORIES_SERVICE_URL || 'https://content-categories.onrender.com',
   
   // Clé API GNews (pour le frontend si nécessaire)
   GNEWS_API_KEY: process.env.REACT_APP_GNEWS_API_KEY || '',
 };
 
 export default config;
+
+
 

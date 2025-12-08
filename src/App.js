@@ -30,7 +30,19 @@ function App() {
       setArticles(data.feed || data.articles || []);
     } catch (e) {
       console.error('Erreur lors de la recherche:', e);
-      setError(e.message || 'Erreur lors de la récupération des articles');
+      let errorMessage = e.message || 'Erreur lors de la récupération des articles';
+      
+      // Messages d'erreur plus détaillés
+      if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+        errorMessage = `Impossible de se connecter à l'API Gateway. Vérifications :
+        - L'instance Render est-elle active ? (peut prendre 30-60s après inactivité)
+        - L'URL est-elle correcte ? (${config.API_GATEWAY_URL})
+        - Les variables d'environnement sont-elles configurées dans Vercel ?`;
+      } else if (e.message.includes('CORS')) {
+        errorMessage = `Erreur CORS : Les services Render doivent autoriser le domaine Vercel.`;
+      }
+      
+      setError(errorMessage);
       setArticles([]);
     } finally {
       setLoading(false);
@@ -57,7 +69,19 @@ function App() {
       setArticles(data.feed || []);
     } catch (e) {
       console.error('Erreur lors du chargement du flux:', e);
-      setError(e.message || 'Erreur lors de la récupération des articles');
+      let errorMessage = e.message || 'Erreur lors de la récupération des articles';
+      
+      // Messages d'erreur plus détaillés
+      if (e.message.includes('Failed to fetch') || e.message.includes('NetworkError')) {
+        errorMessage = `Impossible de se connecter à l'API Gateway. Vérifications :
+        - L'instance Render est-elle active ? (peut prendre 30-60s après inactivité)
+        - L'URL est-elle correcte ? (${config.API_GATEWAY_URL})
+        - Les variables d'environnement sont-elles configurées dans Vercel ?`;
+      } else if (e.message.includes('CORS')) {
+        errorMessage = `Erreur CORS : Les services Render doivent autoriser le domaine Vercel.`;
+      }
+      
+      setError(errorMessage);
       setArticles([]);
     } finally {
       setLoading(false);

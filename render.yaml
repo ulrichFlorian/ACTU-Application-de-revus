@@ -123,13 +123,15 @@ services:
         value: production
       - key: PORT
         value: 3000
+      # URLs des services - Utiliser les URLs publiques Render
+      # Remplace ces valeurs par les vraies URLs publiques de tes services sur Render
       - key: AUTH_SERVICE_URL
-        value: http://user-authentication:3004
+        sync: false  # À configurer manuellement dans Render avec l'URL publique
       - key: PREFERENCES_SERVICE_URL
-        value: http://user-preferences:3001
+        sync: false  # À configurer manuellement dans Render avec l'URL publique
       - key: FEED_SERVICE_URL
-        value: http://content-feed:3002
+        sync: false  # À configurer manuellement dans Render avec l'URL publique
       - key: RECOMMENDATION_SERVICE_URL
-        value: http://content-recommendation:3003
+        sync: false  # À configurer manuellement dans Render avec l'URL publique
       - key: CATEGORIES_SERVICE_URL
-        value: http://content-categories:3005
+        sync: false  # À configurer manuellement dans Render avec l'URL publique
