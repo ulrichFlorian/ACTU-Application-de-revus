@@ -1,8 +1,17 @@
 const express = require('express');
+const axios = require('axios');
 const UserPreference = require('../models/UserPreference');
 const UserProfile = require('../models/UserProfile');
 
 const router = express.Router();
+
+// URL du service content-feed
+// En développement Docker, utiliser le nom du service
+// En production, utiliser l'URL complète
+const feedServiceUrl = (process.env.FEED_SERVICE_URL || 
+  (process.env.NODE_ENV === 'production' 
+    ? 'https://content-feed.onrender.com' 
+    : 'http://content-feed:3002')).replace(/\/$/, '');
 
 // Obtenir les préférences d'un utilisateur
 router.get('/:userId', async (req, res) => {
@@ -217,6 +226,70 @@ router.put('/:userId/profile', async (req, res) => {
     console.error('Erreur lors de la mise à jour du profil:', error);
     res.status(500).json({ 
       error: 'Erreur serveur lors de la mise à jour du profil' 
+    });
+  }
+});
+
+// Route pour récupérer les articles basés sur les préférences utilisateur avec sections internationale et locale
+router.get('/:userId/articles', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { limit = 20, category } = req.query;
+    
+    // Récupérer les préférences utilisateur
+    let preferences = await UserPreference.findOne({ userId });
+    if (!preferences) {
+      return res.json({
+        feed: [],
+        sections: { international: 0, local: 0 },
+        message: 'Aucune préférence trouvée pour cet utilisateur'
+      });
+    }
+    
+    // Utiliser la catégorie fournie en paramètre, sinon prendre la première préférée
+    const categoryToUse = category || (preferences.categories?.preferred?.[0] || 'technologie');
+    
+    try {
+      // Appeler le service content-feed pour récupérer les articles avec sections
+      const feedUrl = `${feedServiceUrl}/api/feed/category/${categoryToUse}?limit=${parseInt(limit) || 20}`;
+      console.log(`[User Preferences] Appel du service feed: ${feedUrl}`);
+      
+      const feedResponse = await axios.get(feedUrl, {
+        timeout: 15000,
+        headers: {
+          'User-Agent': 'UserPreferences-Service/1.0'
+        }
+      });
+      
+      const feedData = feedResponse.data || {};
+      const articles = feedData.feed || [];
+      
+      // Séparer les articles par section
+      const internationalArticles = articles.filter(a => a.section === 'international' || a.origin === 'gnews' || a.origin === 'africa-news');
+      const localArticles = articles.filter(a => a.section === 'local' || a.origin === 'local');
+      
+      return res.json({
+        feed: articles,
+        sections: feedData.sections || {
+          international: internationalArticles.length,
+          local: localArticles.length
+        },
+        category: categoryToUse,
+        timestamp: new Date().toISOString()
+      });
+      
+    } catch (feedError) {
+      console.error('Erreur lors de la récupération des articles:', feedError.message);
+      return res.status(500).json({
+        error: 'Erreur lors de la récupération des articles depuis le service feed',
+        details: feedError.message
+      });
+    }
+    
+  } catch (error) {
+    console.error('Erreur lors de la récupération des articles:', error);
+    res.status(500).json({ 
+      error: 'Erreur serveur lors de la récupération des articles' 
     });
   }
 });

@@ -53,7 +53,7 @@ Vercel détecte automatiquement :
 
 ```
 REACT_APP_API_URL=https://api-gateway.up.railway.app
-REACT_APP_GNEWS_API_KEY=46e7bad378365fc3f21ef1432bfe1a61
+REACT_APP_GNEWS_API_KEY=cb246a4da7dc041b6020dd5f7a16db88
 ```
 
 **Note** : Remplace `https://api-gateway.up.railway.app` par l'URL réelle de ton API Gateway une fois déployé sur Railway.

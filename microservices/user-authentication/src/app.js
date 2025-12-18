@@ -1,10 +1,12 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const passport = require('passport');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
+const googleAuthRoutes = require('./routes/googleAuth');
 
 const app = express();
 const PORT = process.env.PORT || 3004;
@@ -14,6 +16,8 @@ const allowedOrigins = [
   'http://localhost:3000',
   'http://localhost:3001',
   'http://localhost:3004',
+  'http://localhost:4002',
+  'http://localhost:4005',
   process.env.FRONTEND_URL,
   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
   // Autoriser tous les sous-domaines Vercel
@@ -53,6 +57,9 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.static('public'));
+
+// Initialiser Passport
+app.use(passport.initialize());
 
 // Connexion MongoDB avec retry
 // Essayer plusieurs URLs possibles
@@ -105,6 +112,7 @@ mongoose.connection.on('connected', () => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/auth', googleAuthRoutes);
 app.use('/api/users', userRoutes);
 
 // Route de santé

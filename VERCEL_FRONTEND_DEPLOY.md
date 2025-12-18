@@ -54,7 +54,7 @@ REACT_APP_RECOMMENDATION_SERVICE_URL=https://content-recommendation.onrender.com
 REACT_APP_CATEGORIES_SERVICE_URL=https://content-categories.onrender.com
 
 # Clé API GNews (si nécessaire pour le frontend)
-REACT_APP_GNEWS_API_KEY=46e7bad378365fc3f21ef1432bfe1a61
+REACT_APP_GNEWS_API_KEY=cb246a4da7dc041b6020dd5f7a16db88
 ```
 
 > ⚠️ **Important** : Remplace les URLs par tes vraies URLs Render !

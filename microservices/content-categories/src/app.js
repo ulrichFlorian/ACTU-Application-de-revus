@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3005;
 // Configuration CORS pour autoriser Vercel et localhost
 const allowedOrigins = [
   'http://localhost:3000',
-  'http://localhost:3005',
+  'https://content-categories.onrender.com',
   process.env.FRONTEND_URL,
   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
   // Autoriser tous les sous-domaines Vercel

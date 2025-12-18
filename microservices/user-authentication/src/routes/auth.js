@@ -9,12 +9,12 @@ const router = express.Router();
 // Inscription
 router.post('/register', async (req, res) => {
   try {
-    const { email, password, firstName, lastName } = req.body;
+    const { email, password, nom } = req.body;
 
     // Vérifier que tous les champs sont présents
-    if (!email || !password || !firstName || !lastName) {
+    if (!email || !password || !nom) {
       return res.status(400).json({ 
-        error: 'Tous les champs sont requis' 
+        error: 'Tous les champs sont requis (nom, email, mot de passe)' 
       });
     }
 
@@ -38,8 +38,7 @@ router.post('/register', async (req, res) => {
     const user = new User({
       email,
       password,
-      firstName,
-      lastName
+      nom
     });
 
     // Sauvegarder l'utilisateur dans MongoDB (collection 'users')
@@ -53,7 +52,7 @@ router.post('/register', async (req, res) => {
     
     console.log(`✅ Utilisateur créé avec succès dans MongoDB (collection 'users'):`);
     console.log(`   - Email: ${savedUser.email}`);
-    console.log(`   - Nom: ${savedUser.firstName} ${savedUser.lastName}`);
+    console.log(`   - Nom: ${savedUser.nom}`);
     console.log(`   - ID: ${savedUser._id}`);
     console.log(`   - Date de création: ${savedUser.createdAt}`);
 
@@ -64,8 +63,7 @@ router.post('/register', async (req, res) => {
       success: true,
       user: {
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName
+        nom: user.nom
       }
     });
 
@@ -214,16 +212,28 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// Déconnexion
-router.post('/logout', auth, async (req, res) => {
+// Déconnexion (accessible sans authentification pour permettre la déconnexion)
+router.post('/logout', async (req, res) => {
   try {
-    // Désactiver la session
-    await Session.findOneAndUpdate(
-      { token: req.token },
-      { isActive: false }
-    );
+    const token = req.headers.authorization?.replace('Bearer ', '') || req.body.token;
+    
+    if (token) {
+      // Désactiver la session si elle existe
+      try {
+        await Session.findOneAndUpdate(
+          { token: token },
+          { isActive: false }
+        );
+      } catch (err) {
+        // Ignorer les erreurs de session (peut ne pas exister)
+        console.log('Session non trouvée ou déjà désactivée');
+      }
+    }
 
-    res.json({ message: 'Déconnexion réussie' });
+    res.json({ 
+      message: 'Déconnexion réussie',
+      success: true
+    });
 
   } catch (error) {
     console.error('Erreur lors de la déconnexion:', error);

@@ -76,7 +76,7 @@
 2. **"Add New Project"** → Sélectionner repo GitHub
 3. Configurer variables :
    ```
-   REACT_APP_GNEWS_API_KEY=46e7bad378365fc3f21ef1432bfe1a61
+   REACT_APP_GNEWS_API_KEY=cb246a4da7dc041b6020dd5f7a16db88
    REACT_APP_API_URL=https://api-gateway.up.railway.app
    ```
 4. **"Deploy"** → ✅ Frontend en ligne

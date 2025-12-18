@@ -11,18 +11,22 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
+    required: function() {
+      return !this.googleId; // Requis seulement si ce n'est pas un compte Google
+    },
     minlength: 6
   },
-  firstName: {
+  nom: {
     type: String,
-    required: true,
+    required: function() {
+      return !this.googleId; // Requis seulement si ce n'est pas un compte Google
+    },
     trim: true
   },
-  lastName: {
+  googleId: {
     type: String,
-    required: true,
-    trim: true
+    sparse: true,
+    unique: true
   },
   role: {
     type: String,
@@ -73,8 +77,8 @@ userSchema.methods.toPublicJSON = function() {
   return {
     id: this._id,
     email: this.email,
-    firstName: this.firstName,
-    lastName: this.lastName,
+    nom: this.nom,
+    googleId: this.googleId,
     role: this.role,
     isActive: this.isActive,
     lastLogin: this.lastLogin,

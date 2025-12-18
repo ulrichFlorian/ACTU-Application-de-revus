@@ -36,7 +36,7 @@ git push origin Akongo
 
 ```env
 REACT_APP_API_GATEWAY_URL=https://api-gateway.onrender.com
-REACT_APP_GNEWS_API_KEY=46e7bad378365fc3f21ef1432bfe1a61
+REACT_APP_GNEWS_API_KEY=cb246a4da7dc041b6020dd5f7a16db88
 ```
 
 > ⚠️ **IMPORTANT** : 

@@ -88,16 +88,19 @@ app.get('/health', (req, res) => {
 
 // Démarrage du serveur
 // Écouter sur 0.0.0.0 pour être accessible depuis l'extérieur du conteneur Docker
-app.listen(PORT, '0.0.0.0', async () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Service content-feed démarré sur le port ${PORT}`);
   console.log(`📡 Health check: http://localhost:${PORT}/health`);
   
   // Connexion Redis (optionnelle, le service fonctionne sans)
-  try {
-    await redisClient.connect();
-    console.log('✅ Connexion Redis établie');
-  } catch (err) {
-    console.warn('⚠️ Redis non disponible, service fonctionne sans cache:', err.message);
-  }
+  // Utiliser une fonction async séparée pour éviter les problèmes
+  (async () => {
+    try {
+      await redisClient.connect();
+      console.log('✅ Connexion Redis établie');
+    } catch (err) {
+      console.warn('⚠️ Redis non disponible, service fonctionne sans cache:', err.message);
+    }
+  })();
 });
 

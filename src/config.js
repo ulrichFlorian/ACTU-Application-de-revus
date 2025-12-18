@@ -4,7 +4,9 @@
 
 const config = {
   // URL de l'API Gateway (point d'entrée unique)
-  API_GATEWAY_URL: process.env.REACT_APP_API_GATEWAY_URL || 'https://api-gateway-ydpu.onrender.com',
+  // En développement, utiliser localhost si disponible, sinon Render
+  API_GATEWAY_URL: process.env.REACT_APP_API_GATEWAY_URL || 
+    (process.env.NODE_ENV === 'development' ? 'http://localhost:4001' : 'https://api-gateway-ydpu.onrender.com'),
   
   // URLs des services individuels (si besoin d'appels directs)
   AUTH_SERVICE_URL: process.env.REACT_APP_AUTH_SERVICE_URL || 'http://localhost:3004',

@@ -39,7 +39,7 @@ git push origin Akongo
 5. **Ajouter aussi** :
 
    - **Key** : `REACT_APP_GNEWS_API_KEY`
-   - **Value** : `46e7bad378365fc3f21ef1432bfe1a61`
+   - **Value** : `cb246a4da7dc041b6020dd5f7a16db88`
    - **Environments** : ✅ Production, ✅ Preview, ✅ Development
 
 6. **Sauvegarder**

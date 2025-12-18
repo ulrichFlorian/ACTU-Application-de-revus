@@ -93,7 +93,7 @@ node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
   PREFERENCES_SERVICE_URL=http://user-preferences:3001
   CATEGORIES_SERVICE_URL=http://content-categories:3005
   RECOMMENDATION_SERVICE_URL=http://content-recommendation:3003
-  GNEWS_API_KEY=46e7bad378365fc3f21ef1432bfe1a61
+  GNEWS_API_KEY=cb246a4da7dc041b6020dd5f7a16db88
   AFRICA_NEWS_API_KEY=ae0ec8709fc34dd0b5efeb425aef953e
   REDIS_HOST=redis
   REDIS_PORT=6379

@@ -18,7 +18,7 @@ app.use(compression());
 // Configuration CORS pour autoriser Vercel et localhost
 const allowedOrigins = [
   'http://localhost:3000',
-  'http://localhost:3001',
+  'https://user-preferences.onrender.com',
   process.env.CORS_ORIGIN,
   process.env.FRONTEND_URL,
   process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null,
@@ -89,11 +89,9 @@ const services = {
     }
   },
   feed: {
-    target: process.env.FEED_SERVICE_URL || 'https://content-feed.onrender.com',
-    changeOrigin: true,
-    pathRewrite: {
-      '^/api/feed': '/api/feed'
-    }
+    target: process.env.FEED_SERVICE_URL || 'http://content-feed:3002',
+    changeOrigin: true
+    // Pas de pathRewrite nécessaire - le chemin /api/feed/category/technologie est préservé
   },
   recommendations: {
     target: process.env.RECOMMENDATION_SERVICE_URL || 'https://content-recommendation.onrender.com',

@@ -113,6 +113,165 @@ router.get('/general', async (req, res) => {
   }
 });
 
+// Obtenir le flux pour plusieurs catégories (séparées par virgules)
+router.get('/categories', async (req, res) => {
+  try {
+    const { 
+      categories, 
+      limit = 20, 
+      offset = 0 
+    } = req.query;
+    
+    if (!categories) {
+      return res.status(400).json({ 
+        error: 'Paramètre categories requis (ex: ?categories=sport,politique)' 
+      });
+    }
+
+    // Parser les catégories (séparées par virgules)
+    const categoryList = categories.split(',').map(cat => cat.trim().toLowerCase()).filter(Boolean);
+    
+    if (categoryList.length === 0) {
+      return res.status(400).json({ 
+        error: 'Au moins une catégorie doit être fournie' 
+      });
+    }
+
+    const limitInt = parseInt(limit, 10) || 20;
+    const offsetInt = parseInt(offset, 10) || 0;
+    const limitPerCategory = Math.ceil(limitInt / categoryList.length);
+
+    console.log(`[Feed] Requête pour ${categoryList.length} catégories: ${categoryList.join(', ')}`);
+
+    // Faire des requêtes en parallèle pour chaque catégorie
+    const categoryPromises = categoryList.map(async (categorySlug) => {
+      try {
+        const aggregatedArticles = [];
+        const apiPromises = [];
+
+        // GNews pour cette catégorie (International)
+        if (process.env.GNEWS_API_KEY) {
+          const gNewsPromise = (async () => {
+            try {
+              const gCat = mapToGNewsCategory(categorySlug);
+              let gnews = [];
+              if (gCat) {
+                gnews = await fetchGNewsTopHeadlines(gCat, limitPerCategory);
+              } else {
+                gnews = await fetchGNewsByTopic(categorySlug, limitPerCategory);
+              }
+              if (gnews.length > 0) {
+                return gnews.map(article => ({ ...article, origin: 'gnews', section: 'international', category: categorySlug }));
+              }
+            } catch (e) {
+              console.warn(`[GNews] Erreur pour "${categorySlug}":`, e.message);
+            }
+            return [];
+          })();
+          apiPromises.push(gNewsPromise);
+        }
+
+        // NewsData.io pour cette catégorie (Local - Cameroun)
+        if (process.env.NEWSDATA_API_KEY) {
+          const newsDataPromise = (async () => {
+            try {
+              const localNews = await fetchNewsDataCameroon(categorySlug, limitPerCategory);
+              if (localNews.length > 0) {
+                return localNews.map(article => ({ ...article, origin: 'local', section: 'local', category: categorySlug }));
+              }
+            } catch (e) {
+              console.warn(`[NewsData.io] Erreur pour "${categorySlug}":`, e.message);
+            }
+            return [];
+          })();
+          apiPromises.push(newsDataPromise);
+        }
+
+        // NewsAPI Afrique pour cette catégorie
+        if (process.env.AFRICA_NEWS_API_KEY || process.env.NEWSAPI_KEY) {
+          const africaNewsPromise = (async () => {
+            try {
+              const africaNews = await fetchAfricaNewsByTopic(categorySlug, limitPerCategory);
+              if (africaNews.length > 0) {
+                return africaNews.map(article => ({ ...article, origin: 'africa-news', category: categorySlug }));
+              }
+            } catch (e) {
+              console.warn(`[NewsAPI] Erreur pour "${categorySlug}":`, e.message);
+            }
+            return [];
+          })();
+          apiPromises.push(africaNewsPromise);
+        }
+
+        // Attendre toutes les réponses pour cette catégorie
+        const results = await Promise.all(apiPromises);
+        results.forEach(articles => {
+          if (articles && articles.length > 0) {
+            aggregatedArticles.push(...articles);
+          }
+        });
+
+        return aggregatedArticles;
+      } catch (error) {
+        console.error(`[Feed] Erreur pour la catégorie "${categorySlug}":`, error);
+        return [];
+      }
+    });
+
+    // Attendre toutes les catégories
+    const allCategoryResults = await Promise.all(categoryPromises);
+    
+    // Fusionner tous les articles de toutes les catégories
+    const allArticles = allCategoryResults.flat();
+    
+    // Séparer par section
+    const internationalArticles = allArticles.filter(a => a.section === 'international' || a.origin === 'gnews' || a.origin === 'africa-news');
+    const localArticles = allArticles.filter(a => a.section === 'local' || a.origin === 'local');
+    
+    // Dédupliquer et trier
+    const mergedInternational = dedupeAndSortArticles(internationalArticles, limitInt);
+    const mergedLocal = dedupeAndSortArticles(localArticles, limitInt);
+    
+    // Combiner avec indication de section
+    const allMergedArticles = [
+      ...mergedInternational.map(a => ({ ...a, section: 'international' })),
+      ...mergedLocal.map(a => ({ ...a, section: 'local' }))
+    ];
+    
+    if (allMergedArticles.length > 0) {
+      const origins = Array.from(
+        new Set(allMergedArticles.map(a => a.origin).filter(Boolean))
+      ).join(',');
+      
+      return res.json({
+        feed: allMergedArticles.slice(offsetInt, offsetInt + limitInt),
+        categories: categoryList,
+        timestamp: new Date().toISOString(),
+        source: origins || 'aggregated',
+        total: allMergedArticles.length,
+        sections: {
+          international: mergedInternational.length,
+          local: mergedLocal.length
+        }
+      });
+    }
+
+    // Si aucun article trouvé, retourner un message
+    return res.json({
+      feed: [],
+      categories: categoryList,
+      timestamp: new Date().toISOString(),
+      message: 'Aucune actualité disponible pour les catégories sélectionnées'
+    });
+
+  } catch (error) {
+    console.error('Erreur lors de la récupération du flux par catégories:', error);
+    res.status(500).json({ 
+      error: 'Erreur serveur lors de la récupération du flux par catégories' 
+    });
+  }
+});
+
 // Obtenir le flux par catégorie
 router.get('/category/:categorySlug', async (req, res) => {
   try {
@@ -138,7 +297,7 @@ router.get('/category/:categorySlug', async (req, res) => {
             gnews = await fetchGNewsByTopic(categorySlug, limitInt);
           }
           if (gnews.length > 0) {
-            return gnews.map(article => ({ ...article, origin: 'gnews' }));
+            return gnews.map(article => ({ ...article, origin: 'gnews', section: 'international' }));
           }
         } catch (e) {
           console.warn('[GNews] Erreur:', e.message);
@@ -148,7 +307,27 @@ router.get('/category/:categorySlug', async (req, res) => {
       apiPromises.push(gNewsPromise);
     }
 
-    // Priorité 0 bis: API Afrique (NewsAPI)
+    // Priorité 0 bis: NewsData.io pour articles locaux (Cameroun)
+    if (process.env.NEWSDATA_API_KEY) {
+      const newsDataPromise = (async () => {
+        try {
+          console.log(`[Feed] Appel NewsData.io Cameroun pour "${categorySlug}"...`);
+          const localNews = await fetchNewsDataCameroon(categorySlug, limitInt);
+          if (localNews.length > 0) {
+            console.log(`[Feed] ${localNews.length} articles locaux (Cameroun) trouvés pour "${categorySlug}"`);
+            return localNews.map(article => ({ ...article, origin: 'local', section: 'local' }));
+          } else {
+            console.log(`[Feed] Aucun article local trouvé pour "${categorySlug}"`);
+          }
+        } catch (e) {
+          console.error('[Feed] Erreur NewsData.io:', e.message);
+        }
+        return [];
+      })();
+      apiPromises.push(newsDataPromise);
+    }
+
+    // Priorité 0 ter: API Afrique (NewsAPI)
     if (process.env.AFRICA_NEWS_API_KEY || process.env.NEWSAPI_KEY) {
       const africaNewsPromise = (async () => {
         try {
@@ -176,16 +355,42 @@ router.get('/category/:categorySlug', async (req, res) => {
       }
     });
 
-    const mergedTopArticles = dedupeAndSortArticles(aggregatedArticles, limitInt);
-    if (mergedTopArticles.length > 0) {
+    // Séparer les articles par origine (international vs local)
+    const internationalArticles = aggregatedArticles.filter(a => a.origin === 'gnews' || a.origin === 'africa-news');
+    const localArticles = aggregatedArticles.filter(a => a.origin === 'local');
+    
+    const mergedInternational = dedupeAndSortArticles(internationalArticles, limitInt);
+    const mergedLocal = dedupeAndSortArticles(localArticles, limitInt);
+    
+    // Combiner les résultats avec indication de l'origine et mélanger pour avoir les deux sections
+    const intlWithSection = mergedInternational.map(a => ({ ...a, section: 'international' }));
+    const localWithSection = mergedLocal.map(a => ({ ...a, section: 'local' }));
+    
+    // Mélanger les articles pour avoir une représentation équilibrée des deux sections
+    const allArticles = [];
+    const maxLen = Math.max(intlWithSection.length, localWithSection.length);
+    for (let i = 0; i < maxLen; i++) {
+      if (i < intlWithSection.length) {
+        allArticles.push(intlWithSection[i]);
+      }
+      if (i < localWithSection.length) {
+        allArticles.push(localWithSection[i]);
+      }
+    }
+    
+    if (allArticles.length > 0) {
       const origins = Array.from(
-        new Set(mergedTopArticles.map(a => a.origin).filter(Boolean))
+        new Set(allArticles.map(a => a.origin).filter(Boolean))
       ).join(',');
       return res.json({
-        feed: mergedTopArticles.slice(offsetInt, offsetInt + limitInt),
+        feed: allArticles.slice(offsetInt, offsetInt + limitInt),
         category: categorySlug,
         timestamp: new Date().toISOString(),
-        source: origins || 'aggregated'
+        source: origins || 'aggregated',
+        sections: {
+          international: mergedInternational.length,
+          local: mergedLocal.length
+        }
       });
     }
 
@@ -585,6 +790,7 @@ const mapToNewsAPICategory = (topic) => {
     'politique': 'general',
     'politics': 'general',
     'science': 'science',
+    'sciences': 'science',
     'divertissement': 'entertainment',
     'entertainment': 'entertainment',
     'cinéma': 'entertainment',
@@ -818,6 +1024,257 @@ function mapToGNewsCategory(slug) {
     'santé': 'health', 'sante': 'health', 'health': 'health'
   };
   return mapping[s] || null;
+}
+
+// --- NewsData.io API pour articles locaux (Cameroun) ---
+function mapToNewsDataCategory(slug) {
+  const s = (slug || '').toLowerCase();
+  const mapping = {
+    // NewsData.io categories: business, entertainment, environment, food, health, politics, science, sports, technology, top, tourism, world
+    'politique': 'politics', 'politics': 'politics',
+    'sport': 'sports', 'sports': 'sports',
+    'technologie': 'technology', 'technology': 'technology', 'tech': 'technology',
+    'santé': 'health', 'sante': 'health', 'health': 'health',
+    'entreprise': 'business', 'économie': 'business', 'economie': 'business', 'business': 'business', 'finance': 'business',
+    'divertissement': 'entertainment', 'entertainment': 'entertainment', 'cinéma': 'entertainment', 'cinema': 'entertainment', 'musique': 'entertainment', 'people': 'entertainment', 'culture': 'entertainment',
+    'science': 'science', 'sciences': 'science',
+    'environnement': 'environment', 'environment': 'environment',
+    'tourisme': 'tourism', 'tourism': 'tourism',
+    'général': 'top', 'general': 'top', 'top': 'top',
+    'monde': 'world', 'world': 'world'
+  };
+  return mapping[s] || null;
+}
+
+async function fetchNewsDataCameroon(category, limit) {
+  const apiKey = process.env.NEWSDATA_API_KEY;
+  const allArticles = [];
+  const limitInt = parseInt(limit, 10) || 20;
+  
+  // Sites d'actualités camerounais à interroger
+  const cameroonNewsSites = [
+    'actucameroun.com',
+    'camerounweb.com',
+    'camer.be',
+    'journalducameroun.com',
+    '237online.com',
+    'cameroon-info.net',
+    'crtv.cm'
+  ];
+  
+  // Essayer d'abord NewsData.io
+  if (apiKey) {
+    try {
+      const newsDataCategory = mapToNewsDataCategory(category);
+      
+      // Construire l'URL avec les paramètres
+      const params = new URLSearchParams({
+        apikey: apiKey,
+        country: 'cm', // Cameroun
+        language: 'fr'
+      });
+      
+      // Ajouter la catégorie si disponible
+      if (newsDataCategory) {
+        params.append('category', newsDataCategory);
+      }
+      
+      // Limiter le nombre de résultats
+      params.append('size', String(Math.min(limitInt, 50))); // NewsData.io limite à 50
+      
+      const url = `https://newsdata.io/api/1/latest?${params.toString()}`;
+      console.log(`[NewsData.io] Requête pour Cameroun, catégorie: ${category} (${newsDataCategory || 'all'})`);
+      
+      const { data } = await axios.get(url, { timeout: 10000 });
+      
+      if (data && data.status === 'success' && data.results) {
+        // D'abord créer les articles avec les images disponibles
+        const newsDataArticles = data.results.map(a => ({
+          contentId: a.article_id || a.link,
+          title: a.title,
+          description: a.description || a.content,
+          url: a.link,
+          imageUrl: a.image_url || a.image || 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=400&h=240&fit=crop',
+          publishedAt: a.pubDate,
+          source: a.source_id || extractSourceFromLink(a.link),
+          categories: [{ name: category }],
+          engagement: { views: 0 },
+          country: 'cm',
+          countryName: 'Cameroun',
+          region: 'local',
+          needsImageScraping: !a.image_url && !a.image // Marquer ceux qui ont besoin de scraping
+        }));
+        
+        allArticles.push(...newsDataArticles);
+        console.log(`[NewsData.io] ${newsDataArticles.length} articles trouvés pour le Cameroun`);
+        
+        // Scraper les images en arrière-plan pour les articles qui n'en ont pas (sans bloquer)
+        // Limiter à 5 articles pour éviter la surcharge
+        const articlesToScrape = newsDataArticles
+          .filter(a => a.needsImageScraping)
+          .slice(0, 5);
+        
+        if (articlesToScrape.length > 0) {
+          // Scraper en arrière-plan sans attendre
+          Promise.all(
+            articlesToScrape.map(async (article) => {
+              try {
+                const scrapedImage = await scrapeImageFromUrl(article.url);
+                if (scrapedImage) {
+                  // Mettre à jour l'image dans l'article
+                  const articleIndex = allArticles.findIndex(a => a.url === article.url);
+                  if (articleIndex !== -1) {
+                    allArticles[articleIndex].imageUrl = scrapedImage;
+                  }
+                }
+              } catch (err) {
+                // Ignorer les erreurs de scraping, on garde l'image par défaut
+              }
+            })
+          ).catch(() => {
+            // Ignorer les erreurs globales
+          });
+        }
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.response?.data?.detail || error.message;
+      console.warn(`[NewsData.io] Erreur pour la catégorie "${category}":`, errorMsg);
+    }
+  }
+  
+  // Toujours essayer de récupérer des articles RSS depuis les sites camerounais
+  // pour avoir plus de variété et de meilleures images, même si NewsData.io en a retourné
+  try {
+    const categoryTopic = CATEGORY_TO_GOOGLE_TOPIC[category?.toLowerCase?.()] || category;
+    const sitesToQuery = cameroonNewsSites.slice(0, 5); // Interroger les 5 premiers sites pour plus de résultats
+    
+    const rssPromises = sitesToQuery.map(site => 
+      fetchGoogleNewsSiteRSS(site, categoryTopic, Math.ceil(limitInt / sitesToQuery.length))
+        .catch(err => {
+          console.warn(`[RSS] Erreur pour ${site}:`, err.message);
+          return [];
+        })
+    );
+      
+    const rssResults = await Promise.all(rssPromises);
+    const rssArticles = rssResults.flat()
+      .map(article => ({
+        ...article,
+        country: 'cm',
+        countryName: 'Cameroun',
+        region: 'local',
+        origin: 'local-cameroon-rss',
+        categories: [{ name: category }] // Ajouter la catégorie pour le filtrage
+      }))
+      .filter(article => {
+        // Éviter les doublons
+        return !allArticles.some(existing => existing.url === article.url);
+      });
+    
+    // Scraper les images depuis les sites web pour les articles RSS
+    if (rssArticles.length > 0) {
+      console.log(`[RSS Cameroun] ${rssArticles.length} articles supplémentaires trouvés depuis les sites locaux pour la catégorie "${category}"`);
+      
+      // Marquer les articles qui ont besoin de scraping d'images
+      const articlesWithScrapingFlag = rssArticles.map(article => ({
+        ...article,
+        needsImageScraping: !article.imageUrl || article.imageUrl.includes('placeholder') || article.imageUrl.includes('picsum')
+      }));
+      
+      // Ajouter tous les articles d'abord (avec images par défaut si nécessaire)
+      allArticles.push(...articlesWithScrapingFlag.map(article => ({
+        ...article,
+        imageUrl: article.imageUrl || 'https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=400&h=240&fit=crop'
+      })));
+      
+      // Scraper les images en arrière-plan pour les articles qui n'en ont pas (sans bloquer)
+      // Limiter à 5 articles pour éviter la surcharge
+      const articlesToScrape = articlesWithScrapingFlag
+        .filter(a => a.needsImageScraping)
+        .slice(0, 5);
+      
+      if (articlesToScrape.length > 0) {
+        // Scraper en arrière-plan sans attendre
+        Promise.all(
+          articlesToScrape.map(async (article) => {
+            try {
+              const scrapedImage = await scrapeImageFromUrl(article.url);
+              if (scrapedImage) {
+                // Mettre à jour l'image dans l'article
+                const articleIndex = allArticles.findIndex(a => a.url === article.url);
+                if (articleIndex !== -1) {
+                  allArticles[articleIndex].imageUrl = scrapedImage;
+                  console.log(`[Image Scraping] Image trouvée pour ${article.url}`);
+                }
+              }
+            } catch (err) {
+              // Ignorer les erreurs de scraping
+            }
+          })
+        ).catch(() => {
+          // Ignorer les erreurs globales
+        });
+      }
+    }
+  } catch (error) {
+    console.warn(`[RSS Cameroun] Erreur lors de la récupération depuis les sites locaux:`, error.message);
+  }
+  
+  // Limiter au nombre demandé
+  return allArticles.slice(0, limitInt);
+}
+
+// Fonction pour scraper les images depuis une URL d'article
+async function scrapeImageFromUrl(articleUrl) {
+  try {
+    const { data: html } = await axios.get(articleUrl, {
+      timeout: 5000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
+    
+    const $ = cheerio.load(html);
+    
+    // Essayer plusieurs sélecteurs pour trouver l'image principale
+    const imageSelectors = [
+      'meta[property="og:image"]',
+      'meta[name="twitter:image"]',
+      'article img',
+      '.article-image img',
+      '.post-image img',
+      '.content img',
+      'img[src*="article"]',
+      'img[src*="news"]',
+      'img:first-of-type'
+    ];
+    
+    for (const selector of imageSelectors) {
+      const element = $(selector).first();
+      let imageUrl = element.attr('content') || element.attr('src') || element.attr('data-src');
+      
+      if (imageUrl) {
+        // Convertir les URLs relatives en absolues
+        if (imageUrl.startsWith('//')) {
+          imageUrl = 'https:' + imageUrl;
+        } else if (imageUrl.startsWith('/')) {
+          const urlObj = new URL(articleUrl);
+          imageUrl = urlObj.origin + imageUrl;
+        }
+        
+        // Vérifier que c'est une vraie image (pas un logo, icône, etc.)
+        if (imageUrl.match(/\.(jpg|jpeg|png|gif|webp)/i) && 
+            !imageUrl.match(/(logo|icon|avatar|profile|thumb)/i)) {
+          return imageUrl;
+        }
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.warn(`[Image Scraping] Erreur pour ${articleUrl}:`, error.message);
+    return null;
+  }
 }
 
 // Fonction pour calculer le score de pertinence
